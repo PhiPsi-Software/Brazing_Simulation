@@ -1,0 +1,309 @@
+finish
+/clear   
+/FILNAME,file_verification
+/NUMBER,1   
+/PNUM,MAT,1 
+/REPLOT 
+/PREP7
+
+!*******************************
+!          Parameters
+!*******************************
+Nb_l     = 15.0e-3           !Nb length
+Nb_w     = 10.0e-3           !Nb width
+Nb_t     = 2.0e-3            !Nb thickness
+Ceramic_Size  = 5.0e-3       !Size of ceramic
+Brazing_Filler_t = 0.15e-3   !Thickness of brazing filler
+!Mesh related parameters
+mesh_num_Filler  = 4         !Number of mesh of brazing filler thickness
+general_mesh_size = 0.5e-3   !General mesh size
+Ceramic_X_num = 25           !Number of mesh of ceramic in X direction
+Ceramic_Y_num = 20           !Number of mesh of ceramic in Y direction
+!Intermediate variable
+model_h =Nb_t+Brazing_Filler_t+Ceramic_Size 
+
+!*******************************
+!      Element type
+!*******************************
+ET,1,SOLID226,11    
+
+!*******************************
+!    Materials
+!*******************************
+!Material 1 - Nb
+mptemp,1,20,200,600,800     !Define temperature points
+mpdata,ex,1,1,122E9,119e9,95e9,76e9   
+MP,REFT,1,25                !Reference temperature
+MP, NUXY,1,0.33             !Poisson's ratio
+mpdata,ALPX,1,1,8.5e-6,9.7e-6,11.7e-6,12.3e-6    !Coefficient of thermal expansion
+mpdata,KXX,1,1,54,55,58,60  !Coefficient of heat conduction
+MP, C,1,268                 !Specific heat
+MP, DENS,1,8570             !Density
+tb,bkin,1,4                 !BKIN            
+tbtemp,20,1
+tbdata,1,488e6,0.0e9      
+tbtemp,200,2
+tbdata,1,488e6,0.0e9
+tbtemp,600,3
+tbdata,1,488e6,0.0e9 
+tbtemp,800,4
+tbdata,1,488e6,0.0e9
+
+!Material 2 - ceramic
+MP, EX,2,380E9       
+MP,REFT,2,25
+MP, NUXY,2,0.23     
+mp,ALPX,2,8.0e-6   
+MP, KXX, 2,27.5       
+MP, C,2,205         
+MP, DENS,2,3900     
+
+!Material 3 - brazing filler
+mptemp,1,20,200,400,600,800     
+mpdata,ex,3,1,94E9,95e9,79e9,70e9,20e9    
+MP,REFT,3,800                  
+MP,NUXY,3,0.3       
+mpdata,ALPX,3,1,19.0e-6,19.7e-6,20.2e-6,20.5e-6,21.0e-6     
+MP, KXX, 3,300        
+MP, c,3,600          
+MP, DENS,3,6894      
+tb,bkin,3,5                         
+tbtemp,20,1
+tbdata,1,230e6,0.0     
+tbtemp,200,2
+tbdata,1,110e6,0.0
+tbtemp,400,3
+tbdata,1,98e6,0.0
+tbtemp,600,4
+tbdata,1,25e6,0.0
+tbtemp,800,5
+tbdata,1,20e6,0.0
+
+!*******************************
+!       Geometric model
+!*******************************
+BLOCK,0,Nb_l,0,Nb_w,0,model_h   
+wpoff,0,0,Nb_t  
+VSBW,all            
+wpoff,0,0,Brazing_Filler_t  
+VSBW,all   
+
+wpro,,,90.000000 
+wpoff,0,0,Nb_l/2-Ceramic_Size/2
+VSBW,all
+
+Wpoff,0,0,Ceramic_Size
+VSBW,all
+
+wpro,,90.00,
+wpoff,0,0,-(Nb_w-Ceramic_Size)/2
+
+VSBW,all
+
+wpoff,0,0,-Ceramic_Size
+VSBW,all
+
+WPCSYS,-1,0 
+
+Allsel
+VSEL,S,LOC,X,(Nb_l/2-Ceramic_Size/2)/2
+VSEL,U,LOC,Z,Nb_t/2
+VDELE,all,,,1
+
+Allsel
+VSEL,S,LOC,X,(Nb_l/2+Ceramic_Size/2)+(Nb_l-Ceramic_Size)/4
+VSEL,U,LOC,Z,Nb_t/2
+VDELE,all,,,1
+
+Allsel
+VSEL,S,LOC,X,Nb_l/2
+VSEL,U,LOC,Z,Nb_t/2
+VSEL,U,LOC,Y,Nb_w/2
+VDELE,all,,,1
+Allsel
+
+numcmp,all
+
+allsel
+/VIEW,  1,  0.2760, -0.8306, 0.4835
+/ANG,   1,  -32.02
+/REPLO  
+
+!*******************************
+!            Mesh
+!*******************************
+allsel
+!Setting of Nb vertical mesh
+lsel,s,length,,Nb_t  
+lesize,all,,,7,1/20     
+allsel
+!Setting of ceramic vertical mesh
+lsel,s,,,5
+lsel,a,,,18
+lsel,a,,,39
+lsel,a,,,54
+lesize,all,,,15,1/7    
+
+!X direction mesh partition density of ceramic.
+allsel
+LSEL,S,LOC,X,Nb_l/2 
+LPLOT    
+lesize,all,,,Ceramic_X_num,    
+allsel
+
+!Y direction mesh partition density of ceramic.
+allsel
+LSEL,S,LOC,Y,Nb_w/2 
+LPLOT   
+lesize,all,,,Ceramic_Y_num,     
+allsel
+
+!Setting of brazing filler mesh
+allsel
+lsel,s,length,,Brazing_Filler_t       
+LESIZE,all,,,mesh_num_Filler,,,,,1    
+allsel
+
+!Otrher setting of Nb mesh
+allsel
+lsel,s,length,,(Nb_l-Ceramic_Size)/2   
+LSEL,r,LOC,X,(Nb_l-Ceramic_Size)/2/2 
+lesize,all,,,10,1/5     
+allsel
+lsel,s,length,,(Nb_l-Ceramic_Size)/2  
+LSEL,r,LOC,X,(Nb_l-Ceramic_Size)/2 + Ceramic_Size + (Nb_l-Ceramic_Size)/2/2 
+lesize,all,,,10,1/5     
+allsel
+
+!Global mesh density
+allsel
+lesize,all,general_mesh_size    
+
+!Applly material type 1 to Nb
+allsel
+vsel,s,loc,z,Nb_t/2
+vatt,1,,1
+!Applly material type 2 to ceramic
+allsel
+vsel,s,loc,z,Nb_t+Brazing_Filler_t + Ceramic_Size /2
+vatt,2,,1
+!Applly material type 3 to brazing filler
+allsel
+vsel,s,loc,z,Nb_t+Brazing_Filler_t/2
+vatt,3,,1
+allsel
+
+!Perform meshing
+allsel
+MSHAPE,0,3D 
+MSHKEY,1
+VMESH,all 
+
+!*******************************
+!     Boundary conditions
+!*******************************
+allsel
+DK,1, , , ,0,UX,UY,UZ, , , ,   
+DK,2, , , ,0,UX, , UZ, , , ,   
+DK,3, , , ,0, , , UZ, , , ,   
+DK,4, , , ,0, , , UZ, , , ,   
+allsel
+NSEL,S,LOC,Z,0  
+D,ALL,UZ,0, , , , , , , , ,
+allsel
+
+!*********************************************************
+!     Create a surface set for the convective surfaces
+!*********************************************************
+allsel
+asel,s,ext  
+cm,Area_Conv,area  
+allsel
+
+!*******************************
+!      Solution Settings
+!*******************************
+/solu
+NLGEOM,1          !Turn on the large deformation  
+ANTYPE,4          !Active the transient analysis
+TRNOPT,FULL        
+TREF,25           
+OUTRES,NSOL,-10     
+AUTOTS,ON         
+KBC,0   
+LNSRCH,1                     
+CUTCONTROL,PLSLIMIT,0.5  
+TIMINT,0,STRUC           
+pscontrol,all,on
+RESCONTROL,DEFINE,ALL,ALL,0 
+
+
+!*******************************
+!         Solution Steps
+!*******************************
+!Step 1
+TUNIF, 800
+allsel
+time,10.0
+solve
+!Step2
+allsel
+cmsel,s,Area_Conv,area    
+SFA,all,1,CONV,300,25   
+time,9610  
+solve
+
+!*******************************
+!Post process
+!*******************************
+/post1
+set,last
+/DSCALE,1,1.0  
+!Viewing angle adjustment
+/REPLO  
+/VIEW,  1,  0.161370076716    , -0.984345671798    ,  0.708752195999E-01
+/ANG,   1,  -66.4514156023  
+/REPLO  
+/DIST, 1 ,1.082226,1
+/REP,FAST   
+/REPLOT,RESIZE  
+/AUTO,1 
+/REP,FAST   
+
+!Plot temperature
+allsel
+/TYPE,0,    
+/CONT,1,9,AUTO  
+/REPLOT 
+PLNSOL, TEMP,, 0,1.0    
+/image,save,temperature,bmp
+
+!Plot von Mises stress
+allsel
+/TYPE,0,    
+/CONT,1,9,AUTO  
+/REPLOT 
+PLNSOL, S,EQV, 0,1.0    
+/image,save,mises_stress,bmp
+
+!Plot Sxx stress
+allsel
+/TYPE,0,     
+PLNSOL, S,X, 0,1.0    
+/image,save,sxx_stress,bmp
+
+!Plot Sxx stress slice
+Allsel
+CSYS                      
+WPCSYS                    
+/TYPE,0,     
+NSEL,S,LOC,Y,Nb_w/2,
+ESLN,S  
+plnslou,s,x 
+/VIEW,1,,-1 
+/ANG,1  
+/REP,FAST   
+/AUTO,1 
+/REP,FAST   
+
+finish
